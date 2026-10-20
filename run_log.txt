@@ -1,0 +1,20 @@
+Rows: 2814
+Missing tweets: 0
+Class counts:
+ Stance
+AGAINST    1342
+NONE        741
+FAVOR       731
+By target:
+ Stance                            AGAINST  FAVOR  NONE
+Target                                                
+Atheism                               304     92   117
+Climate Change is a Real Concern       15    212   168
+Feminist Movement                     328    210   126
+Hillary Clinton                       361    112   166
+Legalization of Abortion              334    105   164
+
+LOCAL DEVELOPMENT BASELINES (NOT OFFICIAL TEST):
+Majority: train F1=0.3228, val F1=0.3233, train acc=0.4767, val acc=0.4778
+Unigram logistic regression: train F1=0.9792, val F1=0.6085, train acc=0.9813, val acc=0.6075
+Unigram+bigram logistic regression: train F1=0.9987, val F1=0.5993, train acc=0.9987, val acc=0.6021

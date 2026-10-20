@@ -1,0 +1,64 @@
+\documentclass[9pt,twocolumn]{extarticle}
+\usepackage[margin=0.67in]{geometry}
+\usepackage{graphicx,booktabs,amsmath,hyperref,microtype,xcolor}
+\usepackage[font=small,skip=3pt]{caption}
+\setlength{\columnsep}{0.24in}
+\setlength{\parindent}{0pt}\setlength{\parskip}{3pt}
+\hypersetup{colorlinks=true,urlcolor=blue,citecolor=blue}
+\begin{document}
+\twocolumn[{\centering\Large\bfseries Detecting Political Stance in Social Media Posts Using Machine Learning\par\vspace{5pt}\normalsize Team: \textbf{Arek Bedros Kalayjian, Rami Hassan}\\ Emails: \textbf{abk25@mail.aub.edu, rnh33@mail.aub.edu}\\\vspace{7pt}}]
+\section*{1. Problem and motivation}
+
+Can a simple text classifier identify whether a tweet is \textsc{favor}, \textsc{against}, or \textsc{none} toward a specified topic, and does doubling the amount of training data meaningfully improve performance? Our specific hypothesis is that a classifier trained on 100\% rather than 50\% of available training examples will improve $F_{\mathrm{avg}}=(F_1^{\rm favor}+F_1^{\rm against})/2$ by \textbf{at least 0.02} on the same held-out evaluation set, averaged across five randomly selected half-size training samples.
+
+This matters to social scientists tracking public debate and analysts studying how opinions vary across topics. Predicting stance, unlike ordinary sentiment, requires interpreting a statement relative to a target even when the tweet never names that target \cite{mohammad2016}.
+\section*{2. Impact}
+A successful result would give researchers evidence about whether gathering more labeled tweets is worthwhile for a lightweight stance detector. If the hypothesis fails, that is still informative: data quantity alone may not overcome sparse vocabulary, topic shifts, irony, and ambiguous wording. Automated predictions should not be treated as statements about individual political beliefs. Topic imbalance, non-representative Twitter sampling, noisy labels and asymmetric errors (especially falsely labeling \textsc{favor} as \textsc{against}) can distort conclusions. Results will be reported by topic and class, not only as an aggregate.
+\section*{3. Related work}
+\textbf{Mohammad et al.} introduced SemEval-2016 Task 6 and its target-aware stance labels; the official evaluation is the mean of FAVOR and AGAINST F1, excluding NONE. Their majority-class baseline scored \textbf{0.6522}; the strongest submitted Task A system reached \textbf{0.6782} \cite{mohammad2016}.
+
+\textbf{Zarrella and Marsh} used transfer learning and achieved the top submitted Task A score, demonstrating that learned representations can capture patterns beyond straightforward word matching \cite{zarrella2016}. \textbf{Tutek et al.} combined diverse classifiers using a genetic-algorithm ensemble and placed near the top of the shared task \cite{tutek2016}. \textbf{Patra et al.} investigated support vector machines for tweets, motivating a comparison with other linear text classifiers \cite{patra2016}. \textbf{Vijayaraghavan et al.} explored word- and character-level convolutional networks with data augmentation, reporting $F_{\mathrm{avg}}\approx0.635$ \cite{vijayaraghavan2016}. \textbf{Augenstein et al.} investigated representations for stance generalization across targets, illustrating the importance of domain and topic differences \cite{augenstein2016}.
+
+Unlike these systems, this project prioritizes an interpretable \textbf{training-set-size experiment}, with multinomial logistic regression implemented from scratch, not an attempt to beat the shared-task leaderboard.
+\section*{4. Data}
+We will use the publicly accessible \textbf{SemEval-2016 Task 6, Task A} corpus, curated by Mohammad et al. \cite{mohammad2016}, with a downloadable copy at \url{https://github.com/emsrc/SemEval2016_T6_Stance_Detection} \cite{repository}. It consists of English tweets collected for five targets: Atheism, Climate Change, Feminist Movement, Hillary Clinton, and Legalization of Abortion. Data were annotated for stance toward the target. Reuse will be limited to course research with source attribution; the mirror does not clearly state a separate dataset license, so redistribution permissions must be confirmed against the original task terms.
+
+Each row includes an identifier (nonpredictive), target (categorical text), tweet (free text), and stance (three-class categorical response). The mirror's training file contains \textbf{2,814} labeled tweets (the shared-task paper reports 2,914, which likely also counts the trial tweets released for training) and the official test set has \textbf{1,249} examples. There are no physical units; bag-of-words will yield a sparse numeric vocabulary learned only from training data. Class balance differs significantly between targets, creating a risk of topic-specific majority-label shortcuts.
+\begin{table}[h]
+\centering\small
+\caption{Corpus summary; train count measured locally by \texttt{baseline.py}, test count from \cite{mohammad2016}.}
+\begin{tabular}{lr}\toprule Property & Value\\\midrule Task & A (five known targets)\\ Train examples & 2,814\\ Official test examples & 1,249\\ Input fields & ID, target, text\\ Classes & FAVOR, AGAINST, NONE\\ Evaluation metric & Mean F1 of FAVOR/AGAINST\\\bottomrule\end{tabular}
+\end{table}
+\begin{figure}[h]
+\centering\includegraphics[width=\columnwidth]{class_distribution.png}
+\caption{Training-set class counts by target, generated by \texttt{baseline.py}.}
+\end{figure}
+Data checks will count duplicates, empty tweets, missing target/stance fields and per-topic class frequencies. Preprocessing will preserve stance-bearing negations and hashtags, normalize case/URLs, and vectorize tweet text and its target. Some sarcasm, implicit stance, abbreviations, and sampling biases will remain.
+\section*{5. Proposed models and methods}
+\textbf{M0: Majority-class dummy.} Predict the most frequent class in the training subset. It tests how far imbalance alone takes us.
+
+\textbf{M1: From-scratch softmax regression.} Encode lowercased word unigrams and the target with sparse bag-of-words counts. Train a three-output linear softmax model with cross-entropy, gradient descent and optional $L_2$ regularization. This suits small, high-dimensional text and lets us inspect feature weights.
+
+\textbf{M2: Bigram softmax regression.} Add word bigrams to capture short phrases such as ``not support.'' Hold all other settings fixed where possible to isolate the feature contribution. A scikit-learn implementation will serve only as a verification reference \cite{pedregosa2011}; the final core learner will be our own implementation.
+
+\textbf{Preliminary benchmark (published, not locally run):} On the official Task A test data, majority-class $F_{\mathrm{avg}}=0.6522$, SVM with unigrams $=0.6331$, and SVM with n-grams $=0.6898$ \cite{mohammad2016}. \textbf{Own training/validation results (80/20 split of the training file, scikit-learn reference models):} majority class val $F_{\mathrm{avg}}=0.3233$ (acc 0.4778); unigram logistic regression val $F_{\mathrm{avg}}=0.6085$ (train 0.9792, acc 0.6075); unigram+bigram val $F_{\mathrm{avg}}=0.5993$ (train 0.9987, acc 0.6021). The large train/validation gap shows overfitting that $L_2$ tuning should address. Our majority baseline predicts one global class (AGAINST), so it scores lower than the published per-target majority baseline.
+\section*{6. Evaluation}
+The primary metric is the official $F_{\mathrm{avg}}$, to avoid allowing a strong NONE score to obscure errors in the stance classes. We will also report accuracy, per-class precision/recall/F1, confusion matrices, and per-target F1. First, stratify the official training data into 80\% development training and 20\% validation by target and class. Keep the official test set untouched until the final assessment. Use validation data to select preprocessing and regularization settings.
+
+For the main experiment, hold the architecture and hyperparameters fixed and sample five 50\% subsets of the available development-training pool without replacement (five fixed random seeds). Compare their performance on the official test set to the corresponding 100\% model; report the mean F1 difference, range and standard deviation. To avoid choosing settings using test performance, finish model selection using validation first. The hypothesis is supported only if the full-model improvement over the \emph{mean} of the five half-data models is at least 0.02. Additional comparisons: M0 vs M1 vs M2, with/without bigrams, and F1 across topics. A small qualitative error review will examine sarcasm/implicit stance.
+\section*{7. Resources and code}
+The dataset contains only a few thousand short documents. NumPy, pandas, Matplotlib and a sparse feature representation will suffice on a regular laptop; neither GPU nor AUB HPC is needed. A reproducible download/EDA/baseline script is included with this proposal. Public repository: \url{https://github.com/RamiHassan33/Stance-Classifier}. The repository will contain \texttt{baseline.py}, \texttt{README.md}, dependency instructions, exploratory figures, model code, and run logs; each team member will commit throughout the project.
+\section*{8. Timeline}
+\begin{table}[h]\centering\small\caption{Project milestones.}\begin{tabular}{p{0.22\columnwidth}p{0.7\columnwidth}}\toprule When & Deliverable\\\midrule Oct 20--25 & Data checks, repository, baseline and plots\\ Oct 26--Nov 1 & From-scratch softmax, gradient checks\\ Nov 2--8 & Bigram model, validation tuning\\ Nov 9--16 & Five half-data trials, class/topic analyses\\ \textbf{Nov 17} & \textbf{Progress report due}\\ Nov 18--29 & Error analysis, ablations, reproducibility\\ Dec 4 & Poster session\\ Dec 10 & Final report\\\bottomrule\end{tabular}\end{table}
+\clearpage
+\begin{thebibliography}{9}\small
+\bibitem{mohammad2016} Mohammad et al. (2016). SemEval-2016 Task 6: Detecting Stance in Tweets. \emph{SemEval}, 31--41. \url{https://aclanthology.org/S16-1003/}.
+\bibitem{zarrella2016} Zarrella and Marsh (2016). MITRE at SemEval-2016 Task 6: Transfer Learning for Stance Detection. \url{https://aclanthology.org/S16-1074/}.
+\bibitem{tutek2016} Tutek et al. (2016). TakeLab at SemEval-2016 Task 6: Stance Classification in Tweets Using a Genetic Algorithm Based Ensemble. \url{https://aclanthology.org/S16-1075/}.
+\bibitem{patra2016} Patra et al. (2016). JU\_NLP at SemEval-2016 Task 6: Detecting Stance in Tweets Using Support Vector Machines. \url{https://aclanthology.org/S16-1071/}.
+\bibitem{vijayaraghavan2016} Vijayaraghavan et al. (2016). DeepStance at SemEval-2016 Task 6: Detecting Stance in Tweets Using Character and Word-Level CNNs. \url{https://aclanthology.org/S16-1067/}.
+\bibitem{augenstein2016} Augenstein et al. (2016). USFD at SemEval-2016 Task 6: Any-Target Stance Detection on Twitter with Autoencoders. \url{https://aclanthology.org/S16-1063/}.
+\bibitem{repository} emsrc (2016). SemEval2016 Task 6 Stance Detection (data/code mirror). \url{https://github.com/emsrc/SemEval2016_T6_Stance_Detection}.
+\bibitem{pedregosa2011} Pedregosa et al. (2011). Scikit-learn: Machine Learning in Python. \emph{JMLR} 12, 2825--2830.
+\end{thebibliography}
+\end{document}
