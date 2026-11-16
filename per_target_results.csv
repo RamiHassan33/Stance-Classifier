@@ -1,0 +1,11 @@
+model,target,n,f_avg,accuracy
+sklearn unigram,Atheism,102,0.5136476426799008,0.6372549019607843
+sklearn unigram,Climate Change is a Real Concern,80,0.3448275862068966,0.65
+sklearn unigram,Feminist Movement,133,0.6095238095238096,0.5864661654135338
+sklearn unigram,Hillary Clinton,127,0.5442176870748299,0.6062992125984252
+sklearn unigram,Legalization of Abortion,121,0.5342596117244005,0.5785123966942148
+scratch unigram (lambda=0.01),Atheism,102,0.4184210526315789,0.5882352941176471
+scratch unigram (lambda=0.01),Climate Change is a Real Concern,80,0.3645833333333333,0.6625
+scratch unigram (lambda=0.01),Feminist Movement,133,0.5682432432432433,0.5639097744360902
+scratch unigram (lambda=0.01),Hillary Clinton,127,0.4364736387208297,0.5984251968503937
+scratch unigram (lambda=0.01),Legalization of Abortion,121,0.5216622458001768,0.5950413223140496
